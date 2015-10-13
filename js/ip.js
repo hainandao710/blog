@@ -1,4 +1,5 @@
 $(document).ready(function(){
+  
   $.ajax({
     type : "GET",
     url : "http://apis.baidu.com/apistore/iplookupservice/iplookup" ,
@@ -9,5 +10,6 @@ $(document).ready(function(){
     success : function (data){
         $(".idaddress").html(data+"<p>ILOVEYOU!</>");
     }
-  }
-}
+  });
+  
+});
