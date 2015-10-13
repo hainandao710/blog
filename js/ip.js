@@ -9,5 +9,5 @@ $(document).ready(function(){
     success : function (data){
         $(".idaddress").html(data+"<p>ILOVEYOU!</>");
     }
-  });
+  }
 }
