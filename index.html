@@ -9,6 +9,142 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
     <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script type="javascript">
+      var ReferrerKiller = (function () {
+        var URL_REDIRECTION = "https://www.google.com/url?q=", // You can use another service if you use https protocol no referrer will be sent.
+          PUB = {},
+          IE_GT_8 = (function () {
+              /*- Detecting if it's IE greater than 8 -*/
+              var trident,
+                match = navigator.userAgent.match(/Trident\/(\d)+/);
+              if (null === match) {
+                return false;
+              }
+              trident = parseInt(match[1], 10);
+              if (isNaN(trident)) {
+                return false;
+              }
+              return trident > 4;
+          })();
+        function escapeDoubleQuotes(str) {
+          return str.split('"').join('\\"');
+        }
+        function htmlToNode(html) {
+          var container = document.createElement('div');
+          container.innerHTML = html;
+          return container.firstChild;
+        }
+        function objectToHtmlAttributes(obj) {
+          var attributes = [],
+            value;
+          for (var name in obj) {
+            value = obj[name];
+            attributes.push(name + '="' + escapeDoubleQuotes(value) + '"');
+          }
+          return attributes.join(' ');
+        }
+        function htmlString(html, iframeAttributes) {
+          var iframeAttributes  = iframeAttributes || {},
+            defaultStyles = 'border:none; overflow:hidden; ',
+            id;
+          /*-- Setting default styles and letting the option to add more or overwrite them --*/
+          if ('style' in iframeAttributes) {
+            iframeAttributes.style =  defaultStyles + iframeAttributes.style;
+          } else {
+            iframeAttributes.style = defaultStyles;
+          }
+          id = '__referrer_killer_' + (new Date).getTime() + Math.floor(Math.random()*9999);
+          /*-- Returning html with the hack wrapper --*/
+          return '<iframe \
+              style="border 1px solid #ff0000" \
+              scrolling="no" \
+              frameborder="no" \
+              allowtransparency="true" ' +
+            /*-- Adding style attribute --*/
+            objectToHtmlAttributes( iframeAttributes ) +
+            'id="' + id + '" ' +
+            '	src="javascript:\'\
+			<!doctype html>\
+			<html>\
+			<head>\
+			<meta charset=\\\'utf-8\\\'>\
+			<style>*{margin:0;padding:0;border:0;}</style>\
+			</head>' +
+			/*-- Function to adapt iframe's size to content's size --*/
+			'<script>\
+				 function resizeWindow() {\
+					var elems  = document.getElementsByTagName(\\\'*\\\'),\
+						width  = 0,\
+						height = 0,\
+						first  = document.body.firstChild,\
+						elem;\
+					if (first.offsetHeight && first.offsetWidth) {\
+						width = first.offsetWidth;\
+						height = first.offsetHeight;\
+					} else {\
+						for (var i in elems) {\
+											elem = elems[i];\
+											if (!elem.offsetWidth) {\
+												continue;\
+											}\
+											width  = Math.max(elem.offsetWidth, width);\
+											height = Math.max(elem.offsetHeight, height);\
+						}\
+					}\
+					var ifr = parent.document.getElementById(\\\'' + id + '\\\');\
+					ifr.height = height;\
+					ifr.width  = width;\
+				}\
+			</script>' +
+			'<body onload=\\\'resizeWindow()\\\'>\' + decodeURIComponent(\'' +
+			/*-- Content --*/
+			encodeURIComponent(html) +
+		'\') +\'</body></html>\'"></iframe>';
+	}
+	var linkHtml = PUB.linkHtml = function (url, innerHTML, anchorParams, iframeAttributes) {
+		var html,
+			urlRedirection = '';
+		innerHTML = innerHTML || false;
+		/*-- If there is no innerHTML use the url as innerHTML --*/
+		if (!innerHTML) {
+			innerHTML = url;
+		}
+		anchorParams = anchorParams || {};
+		/*-- Making sure there is a target attribute and the value isn't '_self' --*/
+		if (!('target' in anchorParams) || '_self' === anchorParams.target) {
+			/*-- Converting _self to _top else it would open in the iframe container --*/
+			anchorParams.target = '_top';
+		}
+		if (IE_GT_8) {
+			urlRedirection = URL_REDIRECTION;
+		}
+		html = '<a rel="noreferrer" href="' + urlRedirection + escapeDoubleQuotes(url) + '" ' + objectToHtmlAttributes(anchorParams) + '>' + innerHTML + '</a>';
+		return htmlString(html, iframeAttributes);
+	};
+	
+	var linkNode = PUB.linkNode = function (url, innerHTML, anchorParams, iframeAttributes) {
+		return htmlToNode(linkHtml(url, innerHTML, anchorParams, iframeAttributes));
+	};
+	var imageHtml = PUB.imageHtml = function (url, imgAttributesParam) {
+		var imgAttributes = imgAttributesParam || {},
+		/*-- Making sure this styles are applyed in the image but let the possibility to overwrite them --*/
+			defaultStyles = 'border:none; margin: 0; padding: 0';
+		if ('style' in imgAttributes) {
+			imgAttributes.style = defaultStyles + imgAttributes.style;
+		} else {
+			imgAttributes.style = defaultStyles;
+		}
+		return htmlString('<img src="' + escapeDoubleQuotes(url) + '" ' + objectToHtmlAttributes(imgAttributes) + '/>');
+	};
+	
+	var imageNode = PUB.imageNode = function (url, imgParams) {
+		return htmlToNode(imageHtml(url, imgParams));
+	};
+
+	return PUB;
+})();
+
+    </script>
 
   </head>
   <body>
@@ -17,6 +153,20 @@
       <h2 class="project-tagline">我的地盘我做主......Design By YuanHaiNan</h2>
     </section>
     <section class="main-content">
+      <h2>测试未经授权的腾讯图片</h2>
+      <p>
+          直接img引用：<img src="http://read.html5.qq.com/image?src=forum&q=5&r=0&imgflag=7&imageUrl=http://mmbiz.qpic.cn/mmbiz/cZV2hRpuAPia3RFX6Mvw06kePJ7HbmI7bZBpbKicousdIfWFHEGibmPMWYaQ4Lvx2C7QxN75wRTNsuHic2jkwNockw/0?" />
+      </p>
+      <p>
+         <li>
+           Without sending referrer: <br/>
+           <span id="image_kill_referrer"></span>
+         </li>
+      </p>
+      <script type="javascript">
+        document.getElementById('image_kill_referrer').innerHTML = ReferrerKiller.imageHtml('http://read.html5.qq.com/image?src=forum&q=5&r=0&imgflag=7&imageUrl=http://mmbiz.qpic.cn/mmbiz/cZV2hRpuAPia3RFX6Mvw06kePJ7HbmI7bZBpbKicousdIfWFHEGibmPMWYaQ4Lvx2C7QxN75wRTNsuHic2jkwNockw/0?');
+      </script>
+
       <h2>Windows 待机、休眠、睡眠的区别</h2>
       <h3>待机模式</h3>
       <p>待机（Standby），将系统切换到该模式后，除了内存，电脑其他设备的供电都将中断，只有内存依靠电力维持着其中的数据（因为内存是易失性的，只要断电，数据就没有了）。这样当希望恢复的时候，就可以直接恢复到待机前状态。这种模式并非完全不耗电，因此如果在待机状态下供电发生异常（例如停电），那么下一次就只能重新开机，所以待机前未保存的数据都会丢失。但这种模式的恢复速度是最快的，一般五秒之内就可以恢复。 </p>
