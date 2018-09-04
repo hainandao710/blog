@@ -1,0 +1,8 @@
+title: JavaDeveloper
+description: 我的地盘我做主
+google_analytics: 
+show_downloads: true
+theme: jekyll-theme-minimal
+
+gems:
+  - jekyll-mentions
